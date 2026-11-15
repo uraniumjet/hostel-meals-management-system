@@ -85,3 +85,7 @@ The password is printed once, or set it with `--password`.
 - `--reset` wipes the demo organisation's data first (demo only, never a real organisation).
 - `--org SLUG` fills an organisation you registered instead (it must have no students yet); the accounts are then named `SLUG_admin`, `SLUG_warden` and so on.
 - `--students`, `--days`, `--seed` and `--no-photos` change the size, history length, randomness and photos.
+
+## Licence
+
+Released under the [MIT licence](LICENSE). Copyright (c) 2026 Yusuf Ahmad Shehu.

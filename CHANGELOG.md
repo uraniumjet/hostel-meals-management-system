@@ -19,6 +19,7 @@ project uses [Semantic Versioning](https://semver.org/).
 - Student lifecycle (change room, mark as left, re-admit) and printable credit-card-size ID cards (PDF, one per page or A4 sheets) with the organisation logo set in Setup.
 - `backup_db` command (verified SQLite or pg_dump backups, optional media zip, retention) with restore steps in `docs/deployment.md`.
 - Change-password page for every user.
+- MIT licence.
 - Dockerfile, Docker Compose, GitHub Actions CI (lint, tests on three Python versions, PostgreSQL, deployment checks, image build).
 
 ### Removed
