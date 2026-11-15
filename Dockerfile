@@ -2,14 +2,14 @@
 # Build:  docker build -t hostel-meals .
 # Run:    see docker-compose.yml and docs/deployment.md
 
-FROM python:3.13-slim AS builder
+FROM python:3.15-slim AS builder
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_NO_CACHE_DIR=1
 WORKDIR /build
 COPY requirements.txt requirements-prod.txt ./
 RUN python -m venv /opt/venv \
     && /opt/venv/bin/pip install -r requirements-prod.txt
 
-FROM python:3.13-slim AS runtime
+FROM python:3.15-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/opt/venv/bin:$PATH" \
