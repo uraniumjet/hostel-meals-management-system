@@ -2,6 +2,28 @@
 
 A configurable system for hostels and messes: serve each student the right meal once, take the night roll call, record exit permits, and produce reports. Nothing in it is specific to one institution. Categories, diet types, hostels, rooms, meal times, counters and special periods (Ramadan, Navratri, ...) are data that an administrator sets up, and one installation can serve several organisations.
 
+**Live demo:** [hostel-meals-demo.onrender.com](https://hostel-meals-demo.onrender.com) (fictional data; the sign-in page shows the demo logins). It runs on a free plan, so the first visit after a quiet spell takes about a minute to wake.
+
+**Watch the 1-minute walkthrough:** [VIDEO_LINK](VIDEO_LINK)
+
+## Screenshots
+
+| Sign in | Home |
+|---|---|
+| ![Sign-in page](docs/screenshots/01-login.png) | ![Home dashboard](docs/screenshots/02-home.png) |
+
+| Students | Exit permits |
+|---|---|
+| ![Student list with leave and overdue status](docs/screenshots/03-students.png) | ![Exit permits with days left and overdue](docs/screenshots/04-permits.png) |
+
+| Reports (CSV, Excel and PDF) | Setup |
+|---|---|
+| ![Reports page](docs/screenshots/05-reports.png) | ![Organisation setup with logo](docs/screenshots/06-setup.png) |
+
+| Activity log |
+|---|
+| ![Activity log of who changed what](docs/screenshots/07-activity.png) |
+
 ## What it does
 - **Meal counters:** find a student by QR code (USB scanner or phone camera), roll number or name; see the photo; serve the meal that is open for that student right now. The same meal cannot be collected twice, and a counter can be limited to some categories of students.
 - **Special periods:** date ranges with their own rules for some students, for example Ramadan (no breakfast, lunch and dinner moved, an Iftar time that can be set day by day) or Navratri.
