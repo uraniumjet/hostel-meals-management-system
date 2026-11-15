@@ -16,6 +16,9 @@ project uses [Semantic Versioning](https://semver.org/).
 - Self-service organisation sign-up and in-app Setup screens for everything an admin configures.
 - `seed_test_data` command with fictional students, history, leave in every state and a running Ramadan period.
 - Environment-driven settings, production hardening, health endpoint `/healthz/`, protected photo serving.
+- Student lifecycle (change room, mark as left, re-admit) and printable credit-card-size ID cards (PDF, one per page or A4 sheets) with the organisation logo set in Setup.
+- `backup_db` command (verified SQLite or pg_dump backups, optional media zip, retention) with restore steps in `docs/deployment.md`.
+- Change-password page for every user.
 - Dockerfile, Docker Compose, GitHub Actions CI (lint, tests on three Python versions, PostgreSQL, deployment checks, image build).
 
 ### Removed

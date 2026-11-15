@@ -78,13 +78,28 @@ Docker uses it as the container health check; point an uptime monitor at it too.
 
 ## Backups
 
-Back up the database and the photos together.
+One command backs up the database, checks the result, and removes old copies:
 
-- PostgreSQL: `docker compose exec -T db pg_dump -U hostel hostel > backup-$(date +%F).sql`
-- SQLite: `sqlite3 /data/db.sqlite3 ".backup '/data/backup.sqlite3'"` (do not copy the file while the app is writing)
-- Photos: copy the `appdata` volume (or the folder in `DJANGO_MEDIA_ROOT`).
+```bash
+python manage.py backup_db --dir /data/backups --keep 14 --media
+# Docker: docker compose exec web python manage.py backup_db --dir /data/backups --media
+```
 
-Test a restore before you rely on it.
+- SQLite is copied with SQLite's online backup (safe while the app runs) and the copy is re-opened and integrity-checked.
+- PostgreSQL uses `pg_dump` (custom format, so the PostgreSQL client tools must be installed where the command runs).
+- `--media` also zips the uploaded photos and logos; `--keep N` keeps the newest N database backups (default 14).
+- Run it every night, for example with cron: `15 2 * * * cd /app && python manage.py backup_db --media`.
+- Copy the backup folder off the server (another machine or cloud storage); a backup on the same disk does not survive a disk failure.
+
+### Restoring
+
+1. Stop the app.
+2. SQLite: copy the chosen `hostel-*.sqlite3` over the database file (`SQLITE_PATH` or `db.sqlite3`).
+   PostgreSQL: `pg_restore --clean --if-exists --no-owner -d hostel hostel-YYYYmmdd-HHMMSS.dump`.
+3. Media: unzip `hostel-*-media.zip` into the media folder (`DJANGO_MEDIA_ROOT`).
+4. Start the app, run `python manage.py migrate` (a no-op if the backup is current) and open `/healthz/`.
+
+Practise a restore on a spare machine before you rely on it.
 
 ## Upgrading
 

@@ -1,9 +1,10 @@
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.views import LoginView, PasswordChangeView
 from django.http import Http404
 from django.shortcuts import redirect, render
+from django.urls import reverse_lazy
 
 from .access import hostels_for, is_admin, students_for
 from .decorators import staff_required
@@ -56,3 +57,14 @@ def signup(request):
         messages.success(request, "Your organisation is ready. Finish the setup below, then register students.")
         return redirect("setup:index")
     return render(request, "accounts/signup.html", {"form": form})
+
+
+class StaffPasswordChangeView(PasswordChangeView):
+    """Let any signed-in user change their own password (they stay signed in afterwards)."""
+
+    template_name = "accounts/password_change.html"
+    success_url = reverse_lazy("accounts:home")
+
+    def form_valid(self, form):
+        messages.success(self.request, "Your password has been changed.")
+        return super().form_valid(form)

@@ -31,3 +31,4 @@ sample_data/
 .coverage
 htmlcov/
 *.patch
+backups/

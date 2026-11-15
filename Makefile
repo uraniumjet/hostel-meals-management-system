@@ -32,3 +32,6 @@ docker-up:
 
 docker-down:
 	docker compose down
+
+backup:
+	python manage.py backup_db --media
