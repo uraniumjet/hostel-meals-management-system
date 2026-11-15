@@ -9,4 +9,8 @@ if [ "${RUN_COLLECTSTATIC:-1}" = "1" ]; then
     python manage.py collectstatic --noinput --verbosity 0
 fi
 
+if [ "${DEMO_MODE:-0}" = "1" ]; then
+    python manage.py boot_demo
+fi
+
 exec "$@"

@@ -88,4 +88,4 @@ The password is printed once, or set it with `--password`.
 
 ## Licence
 
-Released under the [MIT licence](LICENSE). Copyright (c) 2026 Yusuf Ahmad Shehu.
+Copyright (c) 2026 Yusuf Ahmad Shehu. All rights reserved. The source is published for reading and evaluation; commercial use, hosting for others or redistribution needs written permission (see [LICENSE](LICENSE)).

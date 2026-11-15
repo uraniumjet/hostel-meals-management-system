@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from accounts.decorators import admin_required
+from audit.services import record
 
 from .models import Counter, MealType, MealWindow, SpecialPeriod, WindowOverride
 from .setup_forms import CounterForm, MealForm, OverrideForm, PeriodForm, WindowForm, effective_window
@@ -22,6 +23,7 @@ def meals(request):
     if request.method == "POST" and form.is_valid():
         meal = form.save()
         messages.success(request, f"{meal.name} added.")
+        record(request, "setup.meals", f"{meal.name} added.")
         return redirect("setup:meals")
     rows = []
     for meal in MealType.objects.filter(organization=org).prefetch_related("windows"):
@@ -38,6 +40,7 @@ def meal_edit(request, pk):
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Meal saved.")
+        record(request, "setup.meal_edit", f"Meal {meal.name} saved.")
         return redirect("setup:meals")
     return render(request, "organizations/setup/simple_form.html",
                   {"form": form, "title": f"Edit {meal.name}", "back_url": reverse("setup:meals")})
@@ -50,6 +53,7 @@ def meal_delete(request, pk):
     try:
         meal.delete()
         messages.success(request, "Meal deleted.")
+        record(request, "setup.meal_delete", f"Meal {meal.name} deleted.")
     except ProtectedError:
         messages.error(request, f"{meal.name} has served-meal records, so it cannot be deleted.")
     return redirect("setup:meals")
@@ -62,6 +66,7 @@ def counters(request):
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Counter added.")
+        record(request, "setup.counters", "Counter added.")
         return redirect("setup:counters")
     rows = Counter.objects.filter(organization=org).prefetch_related("categories").annotate(served=Count("collections"))
     return render(request, "mess/setup/counters.html", {"rows": rows, "form": form})
@@ -75,6 +80,7 @@ def counter_edit(request, pk):
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Counter saved.")
+        record(request, "setup.counter_edit", f"Counter {counter.name} saved.")
         return redirect("setup:counters")
     return render(request, "organizations/setup/simple_form.html",
                   {"form": form, "title": f"Edit {counter.name}", "back_url": reverse("setup:counters")})
@@ -87,6 +93,7 @@ def counter_delete(request, pk):
     try:
         counter.delete()
         messages.success(request, "Counter deleted.")
+        record(request, "setup.counter_delete", f"Counter {counter.name} deleted.")
     except ProtectedError:
         messages.error(request, f"{counter.name} has served-meal records, so it cannot be deleted.")
     return redirect("setup:counters")
@@ -99,6 +106,7 @@ def periods(request):
     if request.method == "POST" and form.is_valid():
         period = form.save()
         messages.success(request, f"{period.name} added. Now set the meal times for it.")
+        record(request, "setup.periods", f"{period.name} added. Now set the meal times for it.")
         return redirect("setup:period", period.pk)
     rows = SpecialPeriod.objects.filter(organization=org).prefetch_related("categories", "skipped_meals").order_by("-start_date")
     return render(request, "mess/setup/periods.html", {"rows": rows, "form": form})
@@ -118,6 +126,7 @@ def period_detail(request, pk):
             if details.is_valid():
                 details.save()
                 messages.success(request, "Period saved.")
+                record(request, "setup.period_detail", f"Period {period.name} saved.")
                 return redirect("setup:period", pk)
         elif action == "window":
             window_form = WindowForm(request.POST, organization=org, prefix="window")
@@ -128,12 +137,14 @@ def period_detail(request, pk):
                     defaults={"start_time": data["start_time"], "end_time": data["end_time"]},
                 )
                 messages.success(request, f"{data['meal'].name} time set for {period.name}.")
+                record(request, "setup.period_detail", f"{data['meal'].name} time set for {period.name}.")
                 return redirect("setup:period", pk)
         elif action == "override":
             override_form = OverrideForm(request.POST, organization=org, period=period, prefix="day")
             if override_form.is_valid():
                 override_form.save()
                 messages.success(request, "Time for that day saved.")
+                record(request, "setup.period_detail", "Time for that day saved.")
                 return redirect("setup:period", pk)
 
     skipped = set(period.skipped_meals.values_list("pk", flat=True))
@@ -163,6 +174,7 @@ def period_window_clear(request, pk, meal_pk):
     period = get_object_or_404(SpecialPeriod, pk=pk, organization=_org(request))
     MealWindow.objects.filter(special_period=period, meal_type__pk=meal_pk, meal_type__organization=_org(request)).delete()
     messages.success(request, "That meal goes back to its normal time during the period.")
+    record(request, "setup.period_window_clear", "That meal goes back to its normal time during the period.")
     return redirect("setup:period", pk)
 
 
@@ -173,6 +185,7 @@ def override_delete(request, pk, override_pk):
     override = get_object_or_404(WindowOverride, pk=override_pk, window__meal_type__organization=_org(request))
     override.delete()
     messages.success(request, "That day goes back to the usual time.")
+    record(request, "setup.override_delete", "That day goes back to the usual time.")
     return redirect("setup:period", period.pk)
 
 
@@ -182,4 +195,5 @@ def period_delete(request, pk):
     period = get_object_or_404(SpecialPeriod, pk=pk, organization=_org(request))
     period.delete()
     messages.success(request, "Period deleted.")
+    record(request, "setup.period_delete", f"Period {period.name} deleted.")
     return redirect("setup:periods")

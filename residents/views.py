@@ -12,6 +12,7 @@ from accounts.access import hostels_for, students_for
 from accounts.decorators import admin_required, staff_required
 from attendance.models import RollCallEntry
 from attendance.services import leave_states
+from audit.services import record
 
 from . import idcards
 from .forms import MarkLeftForm, MoveRoomForm, ReadmitForm, StudentForm
@@ -66,6 +67,8 @@ def _save_form(request, instance, title):
             form.add_error("room", error)  # e.g. the room filled up while the form was open
         else:
             messages.success(request, f"Saved {student.name}.")
+            record(request, "student.registered" if instance is None else "student.edited",
+                   f"{'Registered' if instance is None else 'Edited'} {student.name} ({student.roll_number}).")
             return redirect("residents:detail", pk=student.pk)
     return render(request, "residents/student_form.html", {"form": form, "title": title, "student": instance})
 
@@ -136,6 +139,7 @@ def student_move(request, pk):
             form.add_error(None, error)
         else:
             messages.success(request, f"{student.name} moved to {form.cleaned_data['room']}.")
+            record(request, "student.moved", f"{student.name} ({student.roll_number}) moved to {form.cleaned_data['room']}.")
             return redirect("residents:detail", pk=student.pk)
     return render(request, "residents/student_action.html", {
         "student": student, "form": form, "title": f"Change room: {student.name}", "button": "Move student",
@@ -157,6 +161,7 @@ def student_leave(request, pk):
             form.add_error(None, error)
         else:
             messages.success(request, f"{student.name} is marked as left. The bed is free again.")
+            record(request, "student.left", f"{student.name} ({student.roll_number}) marked as left on {form.cleaned_data['date']:%d %b %Y}.")
             return redirect("residents:list")  # a warden can no longer open a student who has no room in their hostels
     return render(request, "residents/student_action.html", {
         "student": student, "form": form, "title": f"Mark as left: {student.name}", "button": "Mark as left",
@@ -181,6 +186,7 @@ def student_readmit(request, pk):
             form.add_error(None, error)
         else:
             messages.success(request, f"{student.name} is back in the hostel.")
+            record(request, "student.readmitted", f"{student.name} ({student.roll_number}) re-admitted.")
             return redirect("residents:detail", pk=student.pk)
     return render(request, "residents/student_action.html", {
         "student": student, "form": form, "title": f"Re-admit {student.name}", "button": "Re-admit",

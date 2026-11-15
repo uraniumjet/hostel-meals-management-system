@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="{% static 'accounts/app.css' %}">
 </head>
 <body>
+{% if demo_mode %}<div class="alert alert-warning rounded-0 border-0 border-bottom mb-0 py-2 text-center small" role="note"><i class="bi bi-info-circle"></i> <strong>Public demo</strong> with fictional data. It resets whenever the demo restarts, so feel free to click around.</div>{% endif %}
 {% if user.is_authenticated %}
 <nav class="navbar navbar-expand-lg bg-body border-bottom sticky-top app-nav">
   <div class="container-xl">

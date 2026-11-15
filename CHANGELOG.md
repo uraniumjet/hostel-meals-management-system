@@ -19,7 +19,10 @@ project uses [Semantic Versioning](https://semver.org/).
 - Student lifecycle (change room, mark as left, re-admit) and printable credit-card-size ID cards (PDF, one per page or A4 sheets) with the organisation logo set in Setup.
 - `backup_db` command (verified SQLite or pg_dump backups, optional media zip, retention) with restore steps in `docs/deployment.md`.
 - Change-password page for every user.
-- MIT licence.
+- All-rights-reserved licence (source readable for evaluation; commercial use needs permission).
+- Public demo mode (`DEMO_MODE=1`): self-seeding fictional data, shown demo logins, banner, and account changes and uploads switched off; `render.yaml` for a free Render deployment.
+- Reports: Excel (.xlsx) export, organisation logo in PDF headers, bold totals rows, a Hostel occupancy report, quick period buttons (today, yesterday, this week, this month); report downloads are recorded in the activity log.
+- Activity log (Setup → Activity, admins only): student registrations, edits, room moves, leaving and re-admission, imports, setup changes, staff accounts and password changes, with filters.
 - Dockerfile, Docker Compose, GitHub Actions CI (lint, tests on three Python versions, PostgreSQL, deployment checks, image build).
 
 ### Removed

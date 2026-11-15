@@ -11,6 +11,7 @@ from django.db.models import Count, Max, Q
 from accounts.access import hostels_for, students_for
 from attendance.models import RollCallEntry, fmt
 from mess.models import MealCollection
+from organizations.models import Room
 from residents.models import RoomAllocation, Student
 
 from .tables import Table
@@ -80,7 +81,7 @@ def meals_daily(staff, start, end, hostel=None):
     rows.append(["Total", *totals, sum(totals)])
     return Table(
         "Meals served per day", _subtitle(staff, start, end, hostel),
-        ["Date", *[m.name for m in meal_types], "Total"], rows,
+        ["Date", *[m.name for m in meal_types], "Total"], rows, total_row=True,
     )
 
 
@@ -105,7 +106,7 @@ def meals_students(staff, start, end, hostel=None):
     rows.append(["Total", "", "", *totals, sum(totals)])
     return Table(
         "Meals per student", _subtitle(staff, start, end, hostel),
-        ["Roll no.", "Student", "Room", *[m.name for m in meal_types], "Total"], rows,
+        ["Roll no.", "Student", "Room", *[m.name for m in meal_types], "Total"], rows, total_row=True,
     )
 
 
@@ -141,7 +142,7 @@ def attendance_summary(staff, start, end, hostel=None):
         "Attendance summary per student", _subtitle(staff, start, end, hostel),
         ["Roll no.", "Student", "Room", "Nights present", "On permitted leave", "Absent (no permit)",
          "Absent after permit ended", "Total absent without permission", "Longest overdue (days)"],
-        rows, [NOTE_ABSENCE],
+        rows, [NOTE_ABSENCE], total_row=True,
     )
 
 
@@ -168,6 +169,39 @@ def absences(staff, start, end, hostel=None):
     )
 
 
+def occupancy(staff, start, end, hostel=None):
+    """Beds and residents per hostel as of today. The dates chosen for the other reports do not apply here."""
+    hostels = hostels_for(staff)
+    if hostel is not None:
+        hostels = hostels.filter(pk=hostel.pk)
+    rooms = (
+        Room.objects.filter(hostel__in=hostels)
+        .annotate(occ=Count("allocations", filter=Q(allocations__end_date__isnull=True)))
+        .values_list("hostel__name", "capacity", "occ")
+    )
+    per_hostel = {name: [0, 0, 0] for name in hostels.values_list("name", flat=True)}
+    for name, capacity, occ in rooms:
+        stats = per_hostel[name]
+        stats[0] += 1
+        stats[1] += capacity
+        stats[2] += occ
+
+    def percent(residents, beds):
+        return f"{round(100 * residents / beds)}%" if beds else "-"
+
+    rows = [[name, r, beds, res, beds - res, percent(res, beds)] for name, (r, beds, res) in sorted(per_hostel.items())]
+    total = [sum(row[i] for row in rows) for i in (1, 2, 3, 4)]
+    rows.append(["Total", *total, percent(total[2], total[1])])
+    today = staff.organization.local_today()
+    where = hostel.name if hostel else ("all hostels" if staff.role == "admin" else "your hostels")
+    notes = ["Residents are the students living in a room today. A negative number of free beds means a room holds "
+             "more students than its capacity."] if any(row[4] < 0 for row in rows) else []
+    return Table(
+        "Hostel occupancy", f"{staff.organization.name} - {where} - as of {_period_text(today, today)}",
+        ["Hostel", "Rooms", "Beds", "Residents", "Free beds", "Occupancy"], rows, notes, total_row=True,
+    )
+
+
 REPORTS = {
     "meals-daily": ("Meals served per day", "How many meals of each kind were served on each day.", meals_daily),
     "meals-students": ("Meals per student", "Meals each student collected in the period.", meals_students),
@@ -177,4 +211,5 @@ REPORTS = {
     "absences": (
         "Absent without permission", "Every night a student was absent without a valid permit.", absences
     ),
+    "occupancy": ("Hostel occupancy", "Rooms, beds, residents and free beds per hostel as of today.", occupancy),
 }

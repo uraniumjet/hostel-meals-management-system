@@ -22,6 +22,14 @@
         <input type="hidden" name="next" value="{{ next }}">
         <button type="submit" class="btn btn-primary btn-lg w-100">Sign in</button>
       </form>
+      {% if demo_mode %}
+      <div class="alert alert-info mt-4 mb-0 small" role="note">
+        <div class="fw-semibold mb-1"><i class="bi bi-key"></i> Demo logins</div>
+        <div><code>demo_admin</code> sees everything and the Setup screens.</div>
+        <div><code>demo_warden</code> sees the hostels a warden is assigned to.</div>
+        <div class="mt-1">Password for both: <code>{{ demo_password }}</code></div>
+      </div>
+      {% endif %}
       {% if allow_signup %}<hr class="my-4"><p class="text-center text-body-secondary mb-0">New organisation? <a href="{% url 'accounts:signup' %}">Register it here</a></p>{% endif %}
     </div>
   </div>

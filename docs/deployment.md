@@ -109,3 +109,18 @@ docker compose up -d --build     # migrations run automatically on start
 ```
 
 Read `CHANGELOG.md` first; take a backup before every upgrade.
+
+## Free public demo (Render)
+
+For showing the app to clients, employers or examiners. It is **not** for real data: the free plan sleeps when idle and
+has no permanent disk, so the database is rebuilt with fictional data on every start.
+
+1. Push the repository to GitHub.
+2. On https://dashboard.render.com choose **New > Blueprint**, select the repository and apply. `render.yaml` sets
+   everything: Docker build, `DEMO_MODE=1`, a generated secret key, https settings and the health check.
+3. When the deploy finishes, open the `*.onrender.com` address. The first visit after a sleep takes about a minute.
+4. The sign-in page lists the demo logins (`demo_admin`, `demo_warden`) and the shared password (`DEMO_PASSWORD`).
+
+In demo mode sign-up, password change, staff accounts, file imports and every upload are switched off, so a visitor
+cannot lock others out or fill the disk. Put the address at the top of the README and on your CV. Free-plan limits
+change, so check Render's current pricing page. For real clients use the server setup above.

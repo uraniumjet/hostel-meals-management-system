@@ -16,6 +16,7 @@ urlpatterns = [
     path("mess/", include("mess.urls")),
     path("attendance/", include("attendance.urls")),
     path("reports/", include("reports.urls")),
+    path("activity/", include("audit.urls")),
     path("healthz/", healthz, name="healthz"),
     # Photos are personal data, so they are served by a view that checks who is asking.
     re_path(r"^" + settings.MEDIA_URL.lstrip("/") + r"(?P<name>.+)$", student_photo, name="media"),

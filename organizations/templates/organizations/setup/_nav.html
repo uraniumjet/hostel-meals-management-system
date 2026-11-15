@@ -6,4 +6,5 @@
   <li class="nav-item"><a class="nav-link {% if tab == 'counters' %}active{% endif %}" href="{% url 'setup:counters' %}"><i class="bi bi-qr-code"></i> Counters</a></li>
   <li class="nav-item"><a class="nav-link {% if tab == 'periods' %}active{% endif %}" href="{% url 'setup:periods' %}"><i class="bi bi-moon-stars"></i> Special periods</a></li>
   <li class="nav-item"><a class="nav-link {% if tab == 'staff' %}active{% endif %}" href="{% url 'setup:staff' %}"><i class="bi bi-person-badge"></i> Staff</a></li>
+  <li class="nav-item"><a class="nav-link {% if tab == 'activity' %}active{% endif %}" href="{% url 'audit:activity' %}"><i class="bi bi-clock-history"></i> Activity</a></li>
 </ul>

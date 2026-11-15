@@ -1,0 +1,29 @@
+# Render Blueprint: a free, self-resetting public demo of the app.
+# On https://dashboard.render.com choose New > Blueprint, pick this repository, and apply.
+# The free plan sleeps when idle and has no permanent disk, which is fine here: the demo database is created and
+# filled with fictional data on every start. Do NOT put real student data on it.
+services:
+  - type: web
+    name: hostel-meals-demo
+    runtime: docker
+    plan: free
+    healthCheckPath: /healthz/
+    envVars:
+      - key: DEMO_MODE
+        value: "1"
+      - key: DEMO_PASSWORD
+        value: demo-hostel-2026
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_ALLOWED_HOSTS
+        value: .onrender.com
+      - key: DJANGO_CSRF_TRUSTED_ORIGINS
+        value: https://*.onrender.com
+      - key: DJANGO_HTTPS
+        value: "1"
+      - key: DJANGO_BEHIND_PROXY
+        value: "1"
+      - key: WEB_CONCURRENCY
+        value: "2"

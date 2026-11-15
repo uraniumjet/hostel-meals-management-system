@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from accounts.decorators import admin_required
+from audit.services import record
 from organizations.models import Category, DietType, Hostel, Room, StaffProfile
 
 from .setup_forms import (
@@ -36,6 +37,7 @@ def index(request):
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Organisation settings saved.")
+        record(request, "setup.index", "Organisation settings saved.")
         return redirect("setup:index")
     steps = [
         ("Categories", org.categories.count(), "setup:lookups", "Groups such as National and International."),
@@ -65,6 +67,7 @@ def lookups(request):
         if form.is_valid():
             form.save()
             messages.success(request, f"{LOOKUPS[kind][2]} added.")
+            record(request, "setup.lookups", f"{LOOKUPS[kind][2]} added.")
             return redirect("setup:lookups")
         forms[kind] = form
     sections = []
@@ -84,6 +87,7 @@ def lookup_edit(request, kind, pk):
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, f"{singular} renamed.")
+        record(request, "setup.lookup_edit", f"{singular} renamed to {obj.name}.")
         return redirect("setup:lookups")
     return render(request, "organizations/setup/simple_form.html",
                   {"form": form, "title": f"Rename {singular.lower()}", "back_url": reverse("setup:lookups")})
@@ -99,6 +103,7 @@ def lookup_delete(request, kind, pk):
     try:
         obj.delete()
         messages.success(request, f"{singular} deleted.")
+        record(request, "setup.lookup_delete", f"{singular} {obj.name} deleted.")
     except ProtectedError:
         messages.error(request, f"{obj.name} is used by students, so it cannot be deleted.")
     return redirect("setup:lookups")
@@ -111,6 +116,7 @@ def hostels(request):
     if request.method == "POST" and form.is_valid():
         hostel = form.save()
         messages.success(request, f"{hostel.name} added. Now add its rooms.")
+        record(request, "setup.hostels", f"{hostel.name} added. Now add its rooms.")
         return redirect("setup:hostel", hostel.pk)
     rows = []
     for h in Hostel.objects.filter(organization=org).prefetch_related("rooms").order_by("name"):
@@ -134,12 +140,14 @@ def hostel_detail(request, pk):
             if edit_form.is_valid():
                 edit_form.save()
                 messages.success(request, "Hostel saved.")
+                record(request, "setup.hostel_detail", f"Hostel {hostel.name} saved.")
                 return redirect("setup:hostel", hostel.pk)
         elif action == "room":
             room_form = RoomForm(request.POST, hostel=hostel, prefix="room")
             if room_form.is_valid():
                 room_form.save()
                 messages.success(request, "Room added.")
+                record(request, "setup.hostel_detail", f"Room added in {hostel.name}.")
                 return redirect("setup:hostel", hostel.pk)
         elif action == "bulk":
             bulk_form = BulkRoomForm(request.POST, prefix="bulk")
@@ -151,6 +159,7 @@ def hostel_detail(request, pk):
                 )
                 skipped = len(bulk_form.numbers()) - len(new)
                 messages.success(request, f"{len(new)} room(s) added." + (f" {skipped} already existed and were skipped." if skipped else ""))
+                record(request, "setup.hostel_detail", f"{len(new)} room(s) added." + (f" {skipped} already existed and were skipped." if skipped else ""))
                 return redirect("setup:hostel", hostel.pk)
     rooms = list(hostel.rooms.order_by("number"))
     rooms.sort(key=lambda r: (len(r.number), r.number))
@@ -166,6 +175,7 @@ def hostel_delete(request, pk):
     try:
         hostel.delete()
         messages.success(request, "Hostel deleted.")
+        record(request, "setup.hostel_delete", f"Hostel {hostel.name} deleted.")
     except ProtectedError:
         messages.error(request, f"{hostel.name} has rooms with a stay history, so it cannot be deleted.")
         return redirect("setup:hostel", pk)
@@ -179,6 +189,7 @@ def room_edit(request, pk):
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Room saved.")
+        record(request, "setup.room_edit", f"Room {room.number} in {room.hostel.name} saved.")
         return redirect("setup:hostel", room.hostel_id)
     return render(request, "organizations/setup/simple_form.html",
                   {"form": form, "title": f"Edit room {room.number}", "back_url": reverse("setup:hostel", args=[room.hostel_id])})
@@ -192,6 +203,7 @@ def room_delete(request, pk):
     try:
         room.delete()
         messages.success(request, "Room deleted.")
+        record(request, "setup.room_delete", f"Room {room.number} deleted.")
     except ProtectedError:
         messages.error(request, f"Room {room.number} has a stay history, so it cannot be deleted.")
     return redirect("setup:hostel", hostel_id)
@@ -247,5 +259,6 @@ def staff_edit(request, pk=None):
             with transaction.atomic():
                 saved = form.save()
             messages.success(request, f"{saved.user.username} saved.")
+            record(request, "account.staff_edit", f"Staff account {saved.user.username} {'created' if profile is None else 'changed'}.")
             return redirect("setup:staff")
     return render(request, "organizations/setup/staff_form.html", {"form": form, "profile": profile})

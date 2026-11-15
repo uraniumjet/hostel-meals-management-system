@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'accounts',
     'attendance',
     'reports',
+    'audit',
 ]
 
 MIDDLEWARE = [
@@ -53,6 +54,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'backend.demo.DemoModeMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
@@ -68,6 +70,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'backend.demo.demo_context',
             ],
         },
     },
@@ -148,6 +151,13 @@ SESSION_COOKIE_AGE = env_int("DJANGO_SESSION_HOURS", 12) * 3600  # a shared host
 # Public page where a new organisation registers itself and its first admin.
 # Set ALLOW_ORG_SIGNUP=0 in the environment to switch it off on a locked-down server.
 ALLOW_ORG_SIGNUP = env_bool("ALLOW_ORG_SIGNUP", True)
+
+# Public demo: fictional data, shared logins shown on the sign-in page, and account/upload features switched off.
+# See backend/demo.py and docs/deployment.md. Never use this for real data.
+DEMO_MODE = env_bool("DEMO_MODE", False)
+DEMO_PASSWORD = os.environ.get("DEMO_PASSWORD", "demo-hostel-2026")
+if DEMO_MODE:
+    ALLOW_ORG_SIGNUP = False
 
 # Uploaded import files wait here (outside the public media folder) between preview and confirmation.
 IMPORT_STAGING_DIR = Path(os.environ.get("DJANGO_IMPORT_STAGING_DIR", BASE_DIR / "var" / "import_staging"))

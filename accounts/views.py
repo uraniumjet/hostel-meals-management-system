@@ -6,6 +6,8 @@ from django.http import Http404
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 
+from audit.services import record
+
 from .access import hostels_for, is_admin, students_for
 from .decorators import staff_required
 from .forms import OrganizationSignupForm
@@ -66,5 +68,7 @@ class StaffPasswordChangeView(PasswordChangeView):
     success_url = reverse_lazy("accounts:home")
 
     def form_valid(self, form):
+        response = super().form_valid(form)
         messages.success(self.request, "Your password has been changed.")
-        return super().form_valid(form)
+        record(self.request, "account.password_changed", f"{self.request.user.get_username()} changed their password.")
+        return response

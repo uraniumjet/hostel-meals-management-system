@@ -10,3 +10,4 @@ class Table:
     headers: list
     rows: list
     notes: list = field(default_factory=list)
+    total_row: bool = False  # the last row is a totals row and is shown in bold

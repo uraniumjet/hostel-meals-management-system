@@ -28,6 +28,50 @@ def to_csv(table: Table) -> bytes:
     return buffer.getvalue().encode("utf-8-sig")
 
 
+def to_xlsx(table: Table, heading: str = "") -> bytes:
+    """An Excel workbook: title, subtitle, a styled header row, frozen headers and sensible column widths."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.utils import get_column_letter
+
+    book = Workbook()
+    sheet = book.active
+    sheet.title = "Report"[:31]
+    sheet["A1"] = table.title
+    sheet["A1"].font = Font(name="Arial", size=14, bold=True)
+    sheet["A2"] = table.subtitle
+    sheet["A2"].font = Font(name="Arial", size=10, color="444444")
+    if heading:
+        sheet["A3"] = heading
+        sheet["A3"].font = Font(name="Arial", size=9, color="666666")
+    header_row = 5
+    fill = PatternFill("solid", start_color="1F6F5C")
+    for col, header in enumerate(table.headers, start=1):
+        cell = sheet.cell(row=header_row, column=col, value=str(header))
+        cell.font = Font(name="Arial", bold=True, color="FFFFFF")
+        cell.fill = fill
+        cell.alignment = Alignment(wrap_text=True, vertical="center")
+    for r, row in enumerate(table.rows, start=header_row + 1):
+        last = table.total_row and r == header_row + len(table.rows)
+        for col, value in enumerate(row, start=1):
+            cell = sheet.cell(row=r, column=col, value=None if value is None else value)
+            if isinstance(value, str):
+                cell.data_type = "s"  # text typed by users must never be read as a formula
+            cell.font = Font(name="Arial", bold=last)
+    for col, header in enumerate(table.headers, start=1):
+        longest = max([len(str(header))] + [len(str(row[col - 1])) for row in table.rows[:500]])
+        sheet.column_dimensions[get_column_letter(col)].width = min(max(longest + 2, 10), 45)
+    sheet.freeze_panes = sheet.cell(row=header_row + 1, column=1)
+    note_row = header_row + len(table.rows) + 2
+    for note in table.notes:
+        sheet.cell(row=note_row, column=1, value=note).font = Font(name="Arial", size=9, italic=True)
+        sheet.cell(row=note_row, column=1).data_type = "s"
+        note_row += 1
+    buffer = io.BytesIO()
+    book.save(buffer)
+    return buffer.getvalue()
+
+
 # ---------- PDF ----------
 
 _FONT_CANDIDATES = [
@@ -67,8 +111,25 @@ def _column_widths(table, available):
     return [available * w / total for w in weights]
 
 
-def to_pdf(table: Table, heading: str = "", footer_note: str = "") -> bytes:
-    """A landscape A4 PDF with a repeating header row and page numbers."""
+def _logo_flowable(logo, height):
+    """The logo scaled to `height` (keeping its shape), or None when there is none or it cannot be read."""
+    if not logo:
+        return None
+    try:
+        from PIL import Image as PilImage
+        from reportlab.platypus import Image as PdfImage
+
+        with PilImage.open(io.BytesIO(logo)) as image:
+            width_over_height = image.width / image.height
+        picture = PdfImage(io.BytesIO(logo), width=height * width_over_height, height=height)
+        picture.hAlign = "RIGHT"
+        return picture
+    except Exception:
+        return None
+
+
+def to_pdf(table: Table, heading: str = "", footer_note: str = "", logo: bytes | None = None) -> bytes:
+    """A landscape A4 PDF with a repeating header row, page numbers and, when given, the organisation logo."""
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4, landscape
     from reportlab.lib.styles import ParagraphStyle
@@ -81,6 +142,7 @@ def to_pdf(table: Table, heading: str = "", footer_note: str = "") -> bytes:
     title_style = ParagraphStyle("title", fontName=bold, fontSize=15, leading=19)
     meta_style = ParagraphStyle("meta", fontName=regular, fontSize=9, leading=12, textColor=colors.HexColor("#444444"))
     cell_style = ParagraphStyle("cell", fontName=regular, fontSize=8, leading=10)
+    total_style = ParagraphStyle("total", parent=cell_style, fontName=bold)
     head_style = ParagraphStyle("head", fontName=bold, fontSize=8, leading=10, textColor=colors.white)
     note_style = ParagraphStyle("note", fontName=regular, fontSize=8.5, leading=11)
 
@@ -110,16 +172,27 @@ def to_pdf(table: Table, heading: str = "", footer_note: str = "") -> bytes:
         buffer, pagesize=landscape(A4), leftMargin=12 * mm, rightMargin=12 * mm, topMargin=12 * mm,
         bottomMargin=16 * mm, title=table.title,
     )
-    story = [Paragraph(escape(table.title), title_style)]
+    titles = [Paragraph(escape(table.title), title_style)]
     for line in (heading, table.subtitle):
         if line:
-            story.append(Paragraph(escape(line), meta_style))
+            titles.append(Paragraph(escape(line), meta_style))
+    mark = _logo_flowable(logo, 14 * mm)
+    if mark is not None:
+        top = PdfTable([[titles, mark]], colWidths=[landscape(A4)[0] - 24 * mm - 30 * mm, 30 * mm])
+        top.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "TOP"), ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+        ]))
+        story = [top]
+    else:
+        story = titles
     story.append(Spacer(1, 5 * mm))
 
     if table.rows:
         data = [[Paragraph(escape(str(h)), head_style) for h in table.headers]]
-        for row in table.rows:
-            data.append([Paragraph(escape("" if cell is None else str(cell)), cell_style) for cell in row])
+        for index, row in enumerate(table.rows):
+            style = total_style if table.total_row and index == len(table.rows) - 1 else cell_style
+            data.append([Paragraph(escape("" if cell is None else str(cell)), style) for cell in row])
         available = landscape(A4)[0] - 24 * mm
         grid = PdfTable(data, colWidths=_column_widths(table, available), repeatRows=1)
         grid.setStyle(TableStyle([

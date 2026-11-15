@@ -3,7 +3,7 @@ name = "hostel-meals"
 version = "0.1.0"
 description = "Meal counters, night roll call, exit permits and reports for hostels and messes."
 readme = "README.md"
-license = "MIT"
+license = "LicenseRef-Proprietary"
 license-files = ["LICENSE"]
 authors = [{ name = "Yusuf Ahmad Shehu" }]
 requires-python = ">=3.12"

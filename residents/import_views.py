@@ -15,6 +15,7 @@ from django.views.decorators.http import require_POST
 
 from accounts.access import hostels_for
 from accounts.decorators import staff_required
+from audit.services import record
 
 from .import_files import COLUMNS, MAX_FILE_BYTES, ImportFileError, index_photos, read_table
 from .importer import plan_import, run_import
@@ -142,6 +143,7 @@ def import_confirm(request):
         return redirect("residents:import")
     summary = run_import(request.staff, plan, zip_path)
     _discard(request)
+    record(request, "student.imported", f"Imported students from a file: {summary.created} registered, {len(summary.failed)} failed.")
     return render(request, "residents/import_result.html", {"summary": summary, "plan": plan})
 
 
